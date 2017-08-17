@@ -1,5 +1,5 @@
 'use strict';
-/* global $ dayModule */
+/* global $ dayModule attractionModule */
 
 /**
  * A module for managing multiple days & application state.
@@ -36,6 +36,7 @@ var tripModule = (function () {
     if (currentDay) currentDay.hide();
     currentDay = newCurrentDay;
     currentDay.show();
+    console.log('current DAy:', currentDay)
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,7 +111,31 @@ var tripModule = (function () {
             dataDays.forEach((day) => {
               newDay = dayModule.create({ number: day.number, _id: day.id });
               days.push(newDay);
-              switchTo(newDay);
+            });
+            currentDay = newDay;
+            switchTo(newDay);
+
+            days.forEach((day) => {
+
+              let attraction;
+              let types = ['restaurants', 'activities'];
+              for (var i = 0; i < types.length; i++) {
+                $.get(`/api/days/${day._id}/${types[i]}`)
+                  .then(function (dbAttractions) {
+                    if (!dbAttractions) return;
+                    dbAttractions.forEach((dbAttraction) => {
+                      attraction = attractionModule.create(dbAttraction);
+                      day.addAttraction(attraction);
+                    });
+                  });
+              }
+
+              $.get(`/api/days/${day._id}/hotels`)
+                .then(function (dbHotel) {
+                  if (!dbHotel) return;
+                  attraction = attractionModpromiseHotelule.create(dbHotel);
+                  day.addAttraction(attraction);
+                });
             });
           }
         });
@@ -119,9 +144,12 @@ var tripModule = (function () {
     switchTo: switchTo,
 
     addToCurrent: function (attraction) {
-      currentDay.addAttraction(attraction);
-      $.post(`/api/days/${currentDay._id}/${attraction.type}/${attraction.id}`);
-      },
+      $.post(`/api/days/${currentDay._id}/${attraction.type}/${attraction.id}`)
+        .then((dbAttraction) => {
+          let frontAttraction = attractionModule.create(dbAttraction);
+          currentDay.addAttraction(frontAttraction);
+        });
+    },
 
     removeFromCurrent: function (attraction) {
       currentDay.removeAttraction(attraction);

@@ -32,6 +32,35 @@ router.post('/', function(req,res,next){
   });
 });
 
+router.get('/:dayId/restaurants/', function (req, res) {
+  Day.findById(req.params.dayId)
+    .then(day => {
+      return day.getRestaurants();
+    })
+    .then(restaurants => {
+      res.json(restaurants);
+    });
+});
+
+router.get('/:dayId/hotels/', function (req, res) {
+  Day.findById(req.params.dayId)
+    .then(day => {
+      return day.getHotel();
+    })
+    .then(hotel => {
+      res.json(hotel);
+    });
+});
+
+router.get('/:dayId/activities/', function (req, res) {
+  Day.findById(req.params.dayId)
+    .then(day => {
+      return day.getActivities();
+    })
+    .then(activities => {
+      res.json(activities);
+    });
+});
 
 router.post('/:dayId/restaurant/:restId', function (req, res) {
   Day.findById(req.params.dayId)
@@ -39,17 +68,30 @@ router.post('/:dayId/restaurant/:restId', function (req, res) {
       return day.addRestaurant(req.params.restId);
     })
     .then(day => {
-      res.json(day);
+      return Restaurant.findById(req.params.restId);
+    })
+    .then(restaurant => {
+      res.json(restaurant);
+    })
+    .catch(err => {
+      console.log(err);
     });
 });
 
 router.post('/:dayId/hotel/:hotelId', function (req, res) {
   Day.findById(req.params.dayId)
     .then(day => {
-      return day.addHotel(req.params.hotelId);
+      return day.setHotel(req.params.hotelId);
     })
     .then(day => {
-      res.json(day);
+      return Hotel.findById(req.params.hotelId);
+    })
+    .then(hotel => {
+      console.log('hotel: ', hotel);
+      res.json(hotel);
+    })
+    .catch(err => {
+      console.log(err);
     });
 });
 
@@ -59,7 +101,13 @@ router.post('/:dayId/activity/:activityId', function (req, res) {
       return day.addActivity(req.params.activityId);
     })
     .then(day => {
-      res.json(day);
+      return Activity.findById(req.params.activityId);
+    })
+    .then(activity => {
+      res.json(activity);
+    })
+    .catch(err => {
+      console.log(err);
     });
 });
 
