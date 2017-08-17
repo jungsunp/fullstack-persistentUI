@@ -1,5 +1,5 @@
 'use strict';
-/* global $ dayModule attractionModule */
+/* global $ dayModule attractionModule utilsModule */
 
 /**
  * A module for managing multiple days & application state.
@@ -36,14 +36,19 @@ var tripModule = (function () {
     if (currentDay) currentDay.hide();
     currentDay = newCurrentDay;
     currentDay.show();
-    console.log('current DAy:', currentDay)
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~
   // before calling `addDay` or `deleteCurrentDay` that update the frontend (the UI), we need to make sure that it happened successfully on the server
   // ~~~~~~~~~~~~~~~~~~~~~~~
   $(function () {
-    $addButton.on('click', addDay);
+    $addButton.on('click', () => {
+      $.post('/api/days', {number: days.length + 1})
+        .then((addedDayFromServer) => {
+          addDay(addedDayFromServer);
+        })
+        .catch(utilsModule.logErr);
+    });
     $removeButton.on('click', deleteCurrentDay);
   });
 
@@ -52,17 +57,15 @@ var tripModule = (function () {
   // ~~~~~~~~~~~~~~~~~~~~~~~
   // `addDay` may need to take information now that we can persist days -- we want to display what is being sent from the DB
   // ~~~~~~~~~~~~~~~~~~~~~~~
-  function addDay() {
+  function addDay(dayInfo) {
     if (this && this.blur) this.blur(); // removes focus box from buttons
-
-    $.post('/api/days', {
-      number: days.length + 1
-    })
-      .then((day) => {
-        var newDay = dayModule.create({ number: day.number, _id: day.id });
-        days.push(newDay);
-        switchTo(newDay);
-      })
+    var newDay = dayModule.create(dayInfo);
+    days.push(newDay);
+    if (days.length === 1) {
+      currentDay = newDay;
+      switchTo(days[0]);
+    }
+    switchTo(newDay);
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,57 +97,18 @@ var tripModule = (function () {
       // ~~~~~~~~~~~~~~~~~~~~~~~
 
       $.get('/api/days')
-        .then((dataDays) => {
-          var newDay;
-          if (dataDays.length === 0) {
-            $.post('/api/days', {
-              number: 1
-            })
-              .then((day) => {
-                newDay = dayModule.create({ number: 1, _id: day.id });
-                days.push(newDay);
-                currentDay = newDay;
-                switchTo(newDay);
-              });
-          }
-          else {
-            dataDays.forEach((day) => {
-              newDay = dayModule.create({ number: day.number, _id: day.id });
-              days.push(newDay);
-            });
-            currentDay = newDay;
-            switchTo(newDay);
+        .then((daysFromServer) => {
+          daysFromServer.forEach(addDay);
+          switchTo(days[0]);
 
-            days.forEach((day) => {
-
-              let attraction;
-              let types = ['restaurants', 'activities'];
-              for (var i = 0; i < types.length; i++) {
-                $.get(`/api/days/${day._id}/${types[i]}`)
-                  .then(function (dbAttractions) {
-                    if (!dbAttractions) return;
-                    dbAttractions.forEach((dbAttraction) => {
-                      attraction = attractionModule.create(dbAttraction);
-                      day.addAttraction(attraction);
-                    });
-                  });
-              }
-
-              $.get(`/api/days/${day._id}/hotels`)
-                .then(function (dbHotel) {
-                  if (!dbHotel) return;
-                  attraction = attractionModpromiseHotelule.create(dbHotel);
-                  day.addAttraction(attraction);
-                });
-            });
-          }
-        });
+        })
+        .catch(utilsModule.logErr);
     },
 
     switchTo: switchTo,
 
     addToCurrent: function (attraction) {
-      $.post(`/api/days/${currentDay._id}/${attraction.type}/${attraction.id}`)
+      $.post(`/api/days/${currentDay.id}/${attraction.type}/${attraction.id}`)
         .then((dbAttraction) => {
           let frontAttraction = attractionModule.create(dbAttraction);
           currentDay.addAttraction(frontAttraction);

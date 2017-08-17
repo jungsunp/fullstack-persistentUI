@@ -5,9 +5,13 @@ var { Hotel, Restaurant, Activity, Day } = require('../../models');
 module.exports = router;
 
 router.get('/', function(req,res,next){
-  Day.findAll().then((days) => {
-    res.json(days);
-  });
+  Day.findAll({
+    include: [Hotel, Restaurant, Activity],
+    order: ['number']
+  })
+    .then((days) => {
+      res.json(days);
+    });
 });
 
 router.get('/:id', function(req, res, next){

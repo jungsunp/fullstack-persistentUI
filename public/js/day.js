@@ -1,5 +1,5 @@
 'use strict';
-/* global $ utilsModule tripModule attractionsModule */
+/* global $ utilsModule tripModule attractionsModule  attractionModule*/
 
 /**
  * A module for constructing front-end `day` objects, optionally from back-end
@@ -33,11 +33,12 @@ var dayModule = (function () {
     this.hotel = null;
     this.restaurants = [];
     this.activities = [];
+    console.log('data: ',data)
     // for days based on existing data
     utilsModule.merge(data, this);
-    if (this.hotel) this.hotel = attractionsModule.getEnhanced(this.hotel);
-    this.restaurants = this.restaurants.map(attractionsModule.getEnhanced);
-    this.activities = this.activities.map(attractionsModule.getEnhanced);
+    if (this.hotel) this.hotel = attractionModule.create(this.hotel);
+    this.restaurants = this.restaurants.map(attractionModule.create);
+    this.activities = this.activities.map(attractionModule.create);
     // remainder of constructor
     this.buildButton().showButton();
   }
@@ -99,7 +100,6 @@ var dayModule = (function () {
   // ~~~~~~~~~~~~~~~~~~~~~~~
   Day.prototype.addAttraction = function (attraction) {
     // adding to the day object
-    console.log('this day!!!!', this)
     switch (attraction.type) {
       case 'hotel':
         if (this.hotel) this.hotel.hide();
@@ -124,9 +124,14 @@ var dayModule = (function () {
   // ~~~~~~~~~~~~~~~~~~~~~~~
   Day.prototype.removeAttraction = function (attraction) {
     // removing from the day object
+    var removingAttractionFromDay;
     switch (attraction.type) {
       case 'hotel':
         this.hotel = null;
+        removingAttractionFromDay = $.ajax({
+          method: 'DELETE',
+          url: '/days/' + this.id + '/hotels' + attraction.id
+        })
         break;
       case 'restaurant':
         utilsModule.remove(this.restaurants, attraction);
