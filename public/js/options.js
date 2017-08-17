@@ -1,5 +1,5 @@
 'use strict';
-/* global $ tripModule attractionsModule hotels restaurants activities */
+/* global $ tripModule attractionsModule hotels restaurants activities dayModule */
 
 /**
  * This module fills the `select` tags with `option`s.
@@ -20,7 +20,7 @@ $(function () {
   // ~~~~~~~~~~~~~~~~~~~~~~~
     // This looks like a great place to start AJAX work with a request for all attractions. Don't forget that these kinds of requests are async, so we won't have all of the attractions until it comes back, but once it comes back we can make the option tags
   // ~~~~~~~~~~~~~~~~~~~~~~~
-    var hotels, restaurants, activities;
+    var hotels, restaurants, activities, days;
     $.get('/api/hotels')
       .then((dataHotels) => {
         hotels = dataHotels;
@@ -62,6 +62,7 @@ $(function () {
         // get associated attraction and add it to the current day in the trip
         var attraction = attractionsModule.getByTypeAndId(type, id);
         tripModule.addToCurrent(attraction);
+
     });
 
 });
