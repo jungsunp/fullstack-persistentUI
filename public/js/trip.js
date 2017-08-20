@@ -42,6 +42,8 @@ var tripModule = (function () {
   // before calling `addDay` or `deleteCurrentDay` that update the frontend (the UI), we need to make sure that it happened successfully on the server
   // ~~~~~~~~~~~~~~~~~~~~~~~
   $(function () {
+
+    // add new day to both UI and DB
     $addButton.on('click', () => {
       $.post('/api/days', {number: days.length + 1})
         .then((addedDayFromServer) => {
@@ -49,10 +51,20 @@ var tripModule = (function () {
         })
         .catch(utilsModule.logErr);
     });
-    $removeButton.on('click', deleteCurrentDay);
+
+    // remove current day from both UI and DB
+    $removeButton.on('click', () => {
+      $.ajax({
+        method: 'DELETE',
+        url: 'api/days/' + currentDay.id
+      })
+        .then(() => {
+          deleteCurrentDay();
+        })
+        .catch(utilsModule.logErr);
+    });
+
   });
-
-
 
   // ~~~~~~~~~~~~~~~~~~~~~~~
   // `addDay` may need to take information now that we can persist days -- we want to display what is being sent from the DB
@@ -108,11 +120,7 @@ var tripModule = (function () {
     switchTo: switchTo,
 
     addToCurrent: function (attraction) {
-      $.post(`/api/days/${currentDay.id}/${attraction.type}/${attraction.id}`)
-        .then((dbAttraction) => {
-          let frontAttraction = attractionModule.create(dbAttraction);
-          currentDay.addAttraction(frontAttraction);
-        });
+      currentDay.addAttraction(attraction);
     },
 
     removeFromCurrent: function (attraction) {

@@ -11,7 +11,7 @@ var attractionsModule = (function () {
 
     // application state
 
-    var enhanced = {}
+    var libraryOfAttractions = {};
 
     // private helper methods (only available inside the module)
 
@@ -26,22 +26,14 @@ var attractionsModule = (function () {
     var publicAPI = {
 
         getByTypeAndId: function (type, id) {
-            if (type === 'hotel') return findById(enhanced.hotels, id);
-            else if (type === 'restaurant') return findById(enhanced.restaurants, id);
-            else if (type === 'activity') return findById(enhanced.activities, id);
+            if (type === 'hotel') return findById(libraryOfAttractions.hotels, id);
+            else if (type === 'restaurant') return findById(libraryOfAttractions.restaurants, id);
+            else if (type === 'activity') return findById(libraryOfAttractions.activities, id);
             else throw Error('Unknown attraction type');
         },
 
-        getEnhanced: function (databaseAttraction) {
-            var type = databaseAttraction.type;
-            var id = databaseAttraction.id;
-            var found = publicAPI.getByTypeAndId(type, id);
-            if (found) return found;
-            throw Error('enhanced version not found', databaseAttraction);
-        },
-
-        loadEnhancedAttractions: function (type, collection) {
-            enhanced[type] = collection.map(attractionModule.create);
+        setAttractions: function (attractionType, attractions) {
+            libraryOfAttractions[attractionType] = attractions.map(attractionModule.create);
         }
 
     };

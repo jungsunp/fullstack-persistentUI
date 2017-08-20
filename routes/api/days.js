@@ -4,144 +4,109 @@ var { Hotel, Restaurant, Activity, Day } = require('../../models');
 
 module.exports = router;
 
-router.get('/', function(req,res,next){
+// get all days with associated hotels, rests, acts
+router.get('/', function(req, res, next){
   Day.findAll({
-    include: [Hotel, Restaurant, Activity],
+    include: [Hotel, Restaurant, Activity],  // eager loading
     order: ['number']
   })
     .then((days) => {
-      res.json(days);
-    });
+      res.status(200).send(days);
+    })
+    .catch(next);
 });
 
+// get a specific day
 router.get('/:id', function(req, res, next){
-  Day.findById(req.params.id).then((day) => {
-    res.json(day);
-  });
+  Day.findById(req.params.id)
+    .then((day) => {
+      res.stat(200).send(day);
+    })
+    .catch(next);
 });
 
-router.delete('/:id', function(req, res, next){
-  Day.findById(req.params.id).then((day) => {
-    return day.destroy();
-  })
-  .then(() => {
-    res.sendStatus(200);
-  });
-});
-
-router.post('/', function(req,res,next){
+// create a new day
+router.post('/', function(req, res, next){
   Day.create(req.body)
-  .then((day) => {
-    res.json(day);
-  });
+    .then((day) => {
+      res.status(201).send(day);
+    })
+    .catch(next);
 });
 
-router.get('/:dayId/restaurants/', function (req, res) {
-  Day.findById(req.params.dayId)
+// delete a given day
+router.delete('/:id', function(req, res, next){
+  Day.findById(req.params.id)
     .then(day => {
-      return day.getRestaurants();
-    })
-    .then(restaurants => {
-      res.json(restaurants);
-    });
-});
-
-router.get('/:dayId/hotels/', function (req, res) {
-  Day.findById(req.params.dayId)
-    .then(day => {
-      return day.getHotel();
-    })
-    .then(hotel => {
-      res.json(hotel);
-    });
-});
-
-router.get('/:dayId/activities/', function (req, res) {
-  Day.findById(req.params.dayId)
-    .then(day => {
-      return day.getActivities();
-    })
-    .then(activities => {
-      res.json(activities);
-    });
-});
-
-router.post('/:dayId/restaurant/:restId', function (req, res) {
-  Day.findById(req.params.dayId)
-    .then(day => {
-      return day.addRestaurant(req.params.restId);
-    })
-    .then(day => {
-      return Restaurant.findById(req.params.restId);
-    })
-    .then(restaurant => {
-      res.json(restaurant);
-    })
-    .catch(err => {
-      console.log(err);
-    });
-});
-
-router.post('/:dayId/hotel/:hotelId', function (req, res) {
-  Day.findById(req.params.dayId)
-    .then(day => {
-      return day.setHotel(req.params.hotelId);
-    })
-    .then(day => {
-      return Hotel.findById(req.params.hotelId);
-    })
-    .then(hotel => {
-      console.log('hotel: ', hotel);
-      res.json(hotel);
-    })
-    .catch(err => {
-      console.log(err);
-    });
-});
-
-router.post('/:dayId/activity/:activityId', function (req, res) {
-  Day.findById(req.params.dayId)
-    .then(day => {
-      return day.addActivity(req.params.activityId);
-    })
-    .then(day => {
-      return Activity.findById(req.params.activityId);
-    })
-    .then(activity => {
-      res.json(activity);
-    })
-    .catch(err => {
-      console.log(err);
-    });
-});
-
-router.delete('/:dayId/restaurant/:restId', function (req, res) {
-  Day.findById(req.params.dayId)
-    .then(day => {
-      return day.removeRestaurant(req.params.restId);
+      return day.destroy();  // you need to use it this way instead of Day.destroy({...}) so that beforeDestory hook on Day model runs
     })
     .then(() => {
-      res.sendStatus(200);
-    });
+      res.sendStatus(204); // no content
+    })
+    .catch(next);
 });
 
-router.delete('/:dayId/hotel/:hotelId', function (req, res) {
-  Day.findById(req.params.dayId)
-    .then(day => {
-      return day.removeHotel(req.params.hotelId);
+// helper function to reduce redundancy
+router.param('dayId', function (req, rex, next, theDayId) {
+  Day.findById(theDayId)
+    .then(function (foundDay) {
+      req.day = foundDay;
+      next();
     })
-    .then(() => {
-      res.sendStatus(200);
-    });
+    .catch(next);
 });
 
-router.delete('/:dayId/activity/:activityId', function (req, res) {
-  Day.findById(req.params.dayId)
+// resgister a hotel to a day
+router.put('/:dayId/hotel/', function (req, res, next) {
+  req.day.setHotel(req.body.hotelId)
     .then(day => {
-      return day.removeActivity(req.params.activityId);
+      res.sendStatus(204);
     })
+    .catch(next);
+});
+
+// resgister restaurant to a day
+router.put('/:dayId/restaurants', function (req, res, next) {
+  req.day.addRestaurant(req.body.restaurantId)
+    .then(day => {
+      res.sendStatus(204);
+    })
+    .catch(next);
+});
+
+// resgister activities to a day
+router.put('/:dayId/activities', function (req, res, next) {
+  req.day.addActivity(req.body.activityId)
+    .then(day => {
+      res.sendStatus(204);
+    })
+    .catch(next);
+});
+
+// remove a hotel from a day
+router.delete('/:dayId/hotel', function (req, res, next) {
+  req.day.setHotel(null)
     .then(() => {
-      res.sendStatus(200);
-    });
+      res.sendStatus(204);
+    })
+    .catch(next);
+});
+
+// remove restaurants from a day
+router.delete('/:dayId/restaurants/:restaurantId', function (req, res, next) {
+  req.day.removeRestaurant(req.params.restaurantId)
+    .then(() => {
+      res.sendStatus(204);
+    })
+    .catch(next);
+});
+
+// remove activities from a day
+router.delete('/:dayId/activities/:activityId', function (req, res, next) {
+  req.day.removeActivity(req.params.activityId)
+    .then(() => {
+      res.sendStatus(204);
+    })
+    .catch(next);
 });
 
